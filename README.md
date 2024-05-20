@@ -1,12 +1,12 @@
-# abort-nostd [![Latest Version]][crates.io] 
+# libabort [![Latest Version]][crates.io]
 An implementation of the `abort` function that works without the standard library.
 
 Provides an `AbortGuard` type to abort the process unless explicitly "defused".
 This can prevent panics from unwinding in the middle of `unsafe` code,
 which trivially makes the code [exception safe](nomicon-exception-safety).
 
-[Latest Version]: https://img.shields.io/crates/v/abort-nostd.svg
-[crates.io]: https://crates.io/crates/abort-nostd
+[Latest Version]: https://img.shields.io/crates/v/libabort.svg
+[crates.io]: https://crates.io/crates/libabort
 
 ## Available implementations
 The library offers multiple possible implementations,

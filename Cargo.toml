@@ -1,9 +1,9 @@
 [package]
-name = "abort-nostd"
-description = "An abort function that doesn't require the standard library"
+name = "libabort"
+description = "A abort function that doesn't require the standard library"
 version = "0.1.0"
 edition = "2021"
-repository = "https://github.com/Techcable/abort-nostd.rust"
+repository = "https://github.com/Techcable/libabort.rust"
 license = "Apache-2.0 OR MIT"
 
 [dependencies]

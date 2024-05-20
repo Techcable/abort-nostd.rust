@@ -21,6 +21,8 @@ which can be controlled by using feature flags.
    then the `abort` function simply triggers a panic.
    This requires a recent version of Rust (1.60) in order to detect whether panics unwind or abort.
 3. If no other implementations are available,
+   then the `abort` function triggers a double-panic.
+   This always triggers an abort regardless of the rust version or compiler settings.
 
 
 [`std::process::abort`]: https://doc.rust-lang.org/std/process/fn.abort.html

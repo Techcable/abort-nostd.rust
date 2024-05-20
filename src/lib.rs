@@ -71,6 +71,13 @@ pub struct AbortGuard {
     _priv: (),
 }
 impl AbortGuard {
+    /// Create a new abort guard,
+    /// which will trigger an abort unless [`defuse`](Self::defuse) is called.
+    #[inline]
+    pub fn new() -> Self {
+        AbortGuard { _priv: () }
+    }
+
     /// Defuse the guard, preventing the drop function from calling [`abort`].
     ///
     /// This is typically used after succesfull execution of some code.

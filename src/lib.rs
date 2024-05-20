@@ -66,7 +66,7 @@ pub fn abort() -> ! {
 /// This is very useful for guarenteeing a section of code will never panic,
 /// trivially ensuring the [exception
 /// safety](https://doc.rust-lang.org/nomicon/exception-safety.html) of unsafe code.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AbortGuard {
     _priv: (),
 }
@@ -84,6 +84,12 @@ impl AbortGuard {
     #[inline]
     pub fn defuse(self) {
         core::mem::forget(self)
+    }
+}
+impl Default for AbortGuard {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
     }
 }
 impl Drop for AbortGuard {

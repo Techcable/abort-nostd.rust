@@ -1,0 +1,22 @@
+[package]
+name = "abort-nostd"
+description = "An abort function that doesn't require the standard library"
+version = "0.1.0"
+edition = "2021"
+repository = "https://github.com/Techcable/abort-nostd.rust"
+license = "Apache-2.0 OR MIT"
+
+[dependencies]
+cfg-if = "1"
+
+# Enable `feature = "libc"` to use the C standard library's `abort` function.
+# This requires linking against the C standard library.
+#
+# We don't use the `dep:libc` syntax because we want to support versions before Rust 1.60
+# The default-features are disabled, to avoid using the Rust stdlib.
+libc = { version = "0.2", optional = true, default-features = false }
+
+[features]
+# Use the standard library abort function
+std = []
+

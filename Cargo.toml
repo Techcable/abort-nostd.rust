@@ -1,14 +1,12 @@
 [package]
 name = "libabort"
 description = "A abort function that doesn't require the standard library"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 repository = "https://github.com/Techcable/libabort.rust"
 license = "Apache-2.0 OR MIT"
 
 [dependencies]
-cfg-if = "1"
-
 # Enable `feature = "libc"` to use the C standard library's `abort` function.
 # This requires linking against the C standard library.
 #

@@ -1,13 +1,6 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(not(any(doc, feature = "std")), no_std)]
 
-use cfg_if::cfg_if;
-
-#[inline(always)]
-fn _do_panic() -> ! {
-    panic!("fatal error - aborting");
-}
-
 /// Abort the process, as if calling [`std::process::abort`]
 /// or the C standard library [`abort`](https://en.cppreference.com/w/c/program/abort) function.
 ///
@@ -26,31 +19,44 @@ fn _do_panic() -> ! {
 #[cfg_attr(not(any(feature = "std", feature = "libc")), track_caller)]
 #[cfg_attr(any(feature = "std", feature = "libc", panic = "abort"), inline)]
 pub fn abort() -> ! {
-    cfg_if! {
-        // implicitly requries std
-        if #[cfg(feature = "std")] {
-            std::process::abort();
-        } else if #[cfg(feature = "libc")] {
-            libc::abort();
-        } else if #[cfg(panic = "abort")] {
-            /*
-             * NOTE: cfg(panic = "abort") only exists on rustc >= 1.60.0
-             * On previous versions, it will implicitly evaluate to false.
-             */
-            #[not(cfg(panic = "abort"))] {
-                compile_error!("panicking should abort instead of unwinding")
-            }
-            _do_panic()
+    // implicitly requries std
+    #[cfg(feature = "std")]
+    {
+        std::process::abort();
+    }
+    // use standard C library abort function
+    #[cfg(feature = "libc")]
+    {
+        libc::abort();
+    }
+    // fallback
+    #[cfg(not(any(feature = "std", feature = "abort")))]
+    {
+        #[inline(always)]
+        fn do_panic() -> ! {
+            panic!("fatal error - aborting");
+        }
+        /*
+         * Check if a panics cause unwinding or immediate aborts.
+         * If it aborts, we only need to panic once.
+         * If it unwinds, we need to do a double-panic.
+         *
+         * NOTE: cfg(panic = "abort") only exists on rustc >= 1.60.0
+         * On previous versions, it will implicitly evaluate to false.
+         */
+        if cfg!(panic = "abort") {
+            do_panic()
         } else {
             // double panics are guarenteed to abort
             struct DoublePanicGuard;
             impl Drop for DoublePanicGuard {
+                #[inline]
                 fn drop(&mut self) {
-                    _do_panic(); // this will abort the process
+                    do_panic(); // this will abort the process
                 }
             }
             let _guard = DoublePanicGuard;
-            _do_panic()
+            do_panic()
         }
     }
 }

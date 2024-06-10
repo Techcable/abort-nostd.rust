@@ -8,7 +8,7 @@
 /// without calling any destructors or exit codes.
 ///
 /// ## Safety
-/// This function is **guarenteed** to terminate the process.
+/// This function is **guaranteed** to terminate the process.
 /// Unlike the `panic!` function,
 /// this function will never unwind.
 ///
@@ -19,18 +19,18 @@
 #[cfg_attr(not(any(feature = "std", feature = "libc")), track_caller)]
 #[cfg_attr(any(feature = "std", feature = "libc", panic = "abort"), inline)]
 pub fn abort() -> ! {
-    // implicitly requries std
+    // implicitly requires std
     #[cfg(feature = "std")]
     {
         std::process::abort();
     }
     // use standard C library abort function
-    #[cfg(feature = "libc")]
-    {
+    #[cfg(all(feature = "libc", not(feature = "std")))]
+    unsafe {
         libc::abort();
     }
     // fallback
-    #[cfg(not(any(feature = "std", feature = "abort")))]
+    #[cfg(not(any(feature = "std", feature = "libc")))]
     {
         #[inline(always)]
         fn do_panic() -> ! {

@@ -5,6 +5,10 @@ version = "0.1.3"
 edition = "2021"
 repository = "https://github.com/Techcable/libabort.rust"
 license = "Apache-2.0 OR MIT"
+# First version that doesn't give an error with `cfg(panic)`
+#
+# TODO: Support older rust versions
+rust-version = "1.60"
 
 [dependencies]
 # Enable `feature = "libc"` to use the C standard library's `abort` function.

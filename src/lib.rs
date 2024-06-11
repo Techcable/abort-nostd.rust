@@ -1,5 +1,6 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(not(any(doc, feature = "std")), no_std)]
+#![deny(dead_code)] // Don't allow missing implementations
 
 /// Abort the process, as if calling [`std::process::abort`]
 /// or the C standard library [`abort`](https://en.cppreference.com/w/c/program/abort) function.
@@ -7,19 +8,77 @@
 /// This immediately terminates the process,
 /// without calling any destructors or exit codes.
 ///
+///
+/// ## Implementations
+/// The preferred implementations delegate to a platform-specific abort function.
+/// This is enabled whenever `feature = "std"` or `feature = "libc"` is enabled.
+/// Using a preferred implementation is equivalent to calling [`immediate_abort`].
+///
+/// When a platform-specific abort function is not available,
+/// this will fall back to using a `panic!` as described in the below section.
+///
 /// ## Safety
 /// This function is **guaranteed** to terminate the process.
 /// Unlike the `panic!` function,
-/// this function will never unwind.
+/// this function will never unwind into caller code.
 ///
-/// After aborting, no further code will be ever be executed by this process.
-/// This can be used to once critical ,
-/// without
+/// After aborting, this process will never execute any further user code.
+/// It is possible some `panic!` code will run inside this function.
+/// See the section below for more details.
+///
+/// ### Invoking `panic!` as fallback
+/// No user code will run after invoking this function.
+/// However, one of the fallback implementations uses [`core::panic!`] internally.
+/// This will trigger the panic hook and run code from the standard library.
+/// Outside a call to an `abort` function,
+/// this is guaranteed to be the only other code invoked.
+/// It will always be passed a `&'static str` argument,
+/// which reduces or eliminates use of `core::fmt` machinery.
+///
+/// For safe code this shouldn't be much of an issue
+/// unless you are bothered by the panic hook printing to standard error.
+/// To avoid printing to standard output,
+/// the easiest workaround is to enable an alternate implementation (see below).
+///
+/// For unsafe code, there may be further problems.
+/// If `unsafe` invariants have been violated,
+/// it may be unsafe to execute any code whatever
+/// and the abort must be immediate.
+///
+/// If this usage is unacceptable, invoke the [`immediate_abort`] function instead.
+/// This function will never use the fallback implementation.
+/// If the primary implementation is missing,
+/// it will simply be missing from the library (removed with `cfg`).
+/// Alternatively, using the stdlib "panic_immediate_abort" feature should have a similar effect
+/// and using the fallback implementation will be fine.
+/// As a third choice, `feature = "always-immediate-abort"` will trigger a global compilation error
+/// rather than use the fallback implementation.
 #[cold]
-#[cfg_attr(not(any(feature = "std", feature = "libc")), track_caller)]
-#[cfg_attr(any(feature = "std", feature = "libc"), inline)]
-// #[rustversion::attr(since(1.60), cfg_attr(panic = "abort", inline))]
+#[inline(always)] // immediately delegates
 pub fn abort() -> ! {
+    #[cfg(any(feature = "std", feature = "libc"))]
+    {
+        immediate_abort()
+    }
+    // fallback
+    #[cfg(not(any(feature = "std", feature = "libc")))]
+    {
+        fallback_abort()
+    }
+}
+
+/// Immediately call the platform-specific [`abort`] implementation,
+/// without invoking any other code.
+///
+/// Unlike ,
+/// this will never use a fallback implementation that calls `panic!`.
+/// Instead, this function will simply not exist.
+///
+/// In most cases (especially safe code),
+/// using the regular [`abort`] function is fine.
+#[cfg(any(feature = "std", feature = "libc"))]
+#[inline(always)] // immediately delgeates
+pub fn immediate_abort() -> ! {
     // implicitly requires std
     #[cfg(feature = "std")]
     {
@@ -30,43 +89,63 @@ pub fn abort() -> ! {
     unsafe {
         libc::abort();
     }
-    // fallback
-    #[cfg(not(any(feature = "std", feature = "libc")))]
+}
+
+/// The fallback implementation
+///
+/// ## Rationale for never inlining
+/// The most important reason this function should never be inlined
+/// is because calling `panic!` might trigger unwinding.
+/// We want to guarantee this never happens.
+///
+/// The secondary reason is that inlining this code would bloat the caller
+/// and aborts should always be on the cold-path.
+/// The double-panic implementation is two direct calls instead of one.
+/// Even the `panic="abort"` case is not inlined,
+/// because calling a single-argument function
+/// requires an additional load & register move
+/// than calling a zero-argument function.
+#[cfg(not(any(feature = "std", feature = "libc")))]
+#[inline(never)]
+#[cold]
+fn fallback_abort() -> ! {
+    #[cfg(feature = "always-immediate-abort")]
     {
-        #[inline(always)]
-        fn do_panic() -> ! {
-            panic!("fatal error - aborting");
-        }
-        /*
-         * Check if a panics cause unwinding or immediate aborts.
-         * If it aborts, we only need to panic once.
-         * If it unwinds, we need to do a double-panic.
-         *
-         * NOTE: cfg!(panic = "abort") was stabalized in rust 1.60.0.
-         * While unknown cfg!(...) attributes would normally evalute to false,
-         * for a couple of versions even mentioning this attribute required
-         * a nightly compiler.
-         * In order to avoid errors on old stable compilers,
-         * we gate on the compiler version with #[rustversion::since(...))]
-         */
-        #[rustversion::since(1.60.0)]
-        const PANIC_DOES_ABORT: bool = cfg!(panic = "abort");
-        #[rustversion::before(1.60.0)]
-        const PANIC_DOES_ABORT: bool = false;
-        if PANIC_DOES_ABORT {
-            do_panic()
-        } else {
-            // double panics are guarenteed to abort
-            struct DoublePanicGuard;
-            impl Drop for DoublePanicGuard {
-                #[inline]
-                fn drop(&mut self) {
-                    do_panic(); // this will abort the process
-                }
+        compile_error!("Missing `immediate_abort()` implementation but fallback disabled.")
+    }
+    #[inline(always)]
+    fn do_panic() -> ! {
+        panic!("fatal error - aborting");
+    }
+    /*
+     * Check if a panics cause unwinding or immediate aborts.
+     * If it aborts, we only need to panic once.
+     * If it unwinds, we need to do a double-panic.
+     *
+     * NOTE: cfg!(panic = "abort") was stabalized in rust 1.60.0.
+     * While unknown cfg!(...) attributes would normally evalute to false,
+     * for a couple of versions even mentioning this attribute required
+     * a nightly compiler.
+     * In order to avoid errors on old stable compilers,
+     * we gate on the compiler version with #[rustversion::since(...))]
+     */
+    #[rustversion::since(1.60.0)]
+    const PANIC_DOES_ABORT: bool = cfg!(panic = "abort");
+    #[rustversion::before(1.60.0)]
+    const PANIC_DOES_ABORT: bool = false;
+    if PANIC_DOES_ABORT {
+        do_panic()
+    } else {
+        // double panics are guarenteed to abort
+        struct DoublePanicGuard;
+        impl Drop for DoublePanicGuard {
+            #[inline]
+            fn drop(&mut self) {
+                do_panic(); // this will abort the process
             }
-            let _guard = DoublePanicGuard;
-            do_panic()
         }
+        let _guard = DoublePanicGuard;
+        do_panic()
     }
 }
 

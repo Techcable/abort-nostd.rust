@@ -1,7 +1,7 @@
 [package]
 name = "libabort"
 description = "A abort function that doesn't require the standard library"
-version = "0.1.6"
+version = "0.1.7"
 edition = "2018"
 repository = "https://github.com/Techcable/libabort.rust"
 license = "Apache-2.0 OR MIT"
@@ -26,4 +26,10 @@ rustversion = "1"
 [features]
 # Use the standard library abort function
 std = []
+# Give a compilation error if `immediate_abort` can't be used,
+# avoiding the fallback implementation.
+#
+# This compilation error is triggered in the library crate,
+# not when the user invokes the code.
+always-immediate-abort = []
 

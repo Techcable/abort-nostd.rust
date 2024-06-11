@@ -17,7 +17,8 @@
 /// without
 #[cold]
 #[cfg_attr(not(any(feature = "std", feature = "libc")), track_caller)]
-#[cfg_attr(any(feature = "std", feature = "libc", panic = "abort"), inline)]
+#[cfg_attr(any(feature = "std", feature = "libc"), inline)]
+// #[rustversion::attr(since(1.60), cfg_attr(panic = "abort", inline))]
 pub fn abort() -> ! {
     // implicitly requires std
     #[cfg(feature = "std")]
@@ -41,10 +42,18 @@ pub fn abort() -> ! {
          * If it aborts, we only need to panic once.
          * If it unwinds, we need to do a double-panic.
          *
-         * NOTE: cfg(panic = "abort") only exists on rustc >= 1.60.0
-         * On previous versions, it will implicitly evaluate to false.
+         * NOTE: cfg!(panic = "abort") was stabalized in rust 1.60.0.
+         * While unknown cfg!(...) attributes would normally evalute to false,
+         * for a couple of versions even mentioning this attribute required
+         * a nightly compiler.
+         * In order to avoid errors on old stable compilers,
+         * we gate on the compiler version with #[rustversion::since(...))]
          */
-        if cfg!(panic = "abort") {
+        #[rustversion::since(1.60.0)]
+        const PANIC_DOES_ABORT: bool = cfg!(panic = "abort");
+        #[rustversion::before(1.60.0)]
+        const PANIC_DOES_ABORT: bool = false;
+        if PANIC_DOES_ABORT {
             do_panic()
         } else {
             // double panics are guarenteed to abort

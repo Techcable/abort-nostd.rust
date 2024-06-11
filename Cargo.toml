@@ -2,13 +2,16 @@
 name = "libabort"
 description = "A abort function that doesn't require the standard library"
 version = "0.1.3"
-edition = "2021"
+edition = "2018"
 repository = "https://github.com/Techcable/libabort.rust"
 license = "Apache-2.0 OR MIT"
-# First version that doesn't give an error with `cfg(panic)`
+# Oldest supported version because:
+# - First release of Rust 2018 was 1.31
+# - First support for rustversion::cfg!(...) was 1.39
+# - First support for #![doc = include_str!(...)] was 1.54
 #
-# TODO: Support older rust versions
-rust-version = "1.60"
+# I will consider compromise on last point.
+rust-version = "1.54"
 
 [dependencies]
 # Enable `feature = "libc"` to use the C standard library's `abort` function.
@@ -17,6 +20,8 @@ rust-version = "1.60"
 # We don't use the `dep:libc` syntax because we want to support versions before Rust 1.60
 # The default-features are disabled, to avoid using the Rust stdlib.
 libc = { version = "0.2", optional = true, default-features = false }
+# Used for version-dependent code
+rustversion = "1"
 
 [features]
 # Use the standard library abort function

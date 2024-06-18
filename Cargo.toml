@@ -20,8 +20,9 @@ rust-version = "1.54"
 # We don't use the `dep:libc` syntax because we want to support versions before Rust 1.60
 # The default-features are disabled, to avoid using the Rust stdlib.
 libc = { version = "0.2", optional = true, default-features = false }
-# Used for version-dependent code
-rustversion = "1"
+
+[build-dependencies]
+rustversion-detect = "0.1.2"
 
 [features]
 # Use the standard library abort function

@@ -1,5 +1,6 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(not(any(doc, feature = "std")), no_std)]
+#![cfg_attr(has_doc_cfg, feature(doc_cfg))] // doc_cfg only supported on nightly
 #![deny(dead_code)] // Don't allow missing implementations
 
 /// Abort the process, as if calling [`std::process::abort`]
@@ -77,6 +78,8 @@ pub fn abort() -> ! {
 /// In most cases (especially safe code),
 /// using the regular [`abort`] function is fine.
 #[cfg(not(abort_impl = "fallback"))]
+// NOTE: Keep doc(cfg(...)) in sync with the underlying reasons for the abort_impl
+#[cfg_attr(has_doc_cfg, doc(cfg(any(feature = "std", feature = "libc"))))]
 #[inline(always)] // immediately delegates
 pub fn immediate_abort() -> ! {
     // implicitly requires std

@@ -6,6 +6,10 @@ pub fn main() {
     if RUST_VERSION.is_since_minor_version(1, 60) {
         println!("cargo:rustc-cfg=has_cfg_panic");
     }
+    emit_check_cfg("has_doc_cfg", None);
+    if RUST_VERSION.is_nightly() {
+        println!("cargo:rustc-cfg=has_doc_cfg");
+    }
     let abort_impl_name = if has_cargo_feature("std") {
         "std"
     } else if has_cargo_feature("libc") {

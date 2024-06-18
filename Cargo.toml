@@ -34,3 +34,7 @@ std = []
 # not when the user invokes the code.
 always-immediate-abort = []
 
+[package.metadata.docs.rs]
+# Enable features needed to document `immediate_abort`
+features = ["std", "libc"]
+

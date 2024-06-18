@@ -26,10 +26,10 @@ pub fn main() {
         "x86_64" | "x86" | "arm" | "aarch64" => true,
         _ => false,
     };
-    let trap_impl_name = if RUST_VERSION.is_nightly() {
-        "core-intrinsics"
-    } else if target_families.contains(&"wasm".into()) {
+    let trap_impl_name = if target_families.contains(&"wasm".into()) {
         "wasm"
+    } else if RUST_VERSION.is_nightly() {
+        "core-intrinsics"
     } else if supported_arch {
         "assembly"
     } else {

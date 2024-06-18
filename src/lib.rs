@@ -196,13 +196,13 @@ pub fn trap() -> ! {
 #[cfg(not(trap_impl = "fallback"))]
 #[cold]
 fn invoke_trap() -> ! {
-    #[cfg(trap_impl = "core-intrinsics")]
-    {
-        core::intrinsics::abort()
-    }
     #[cfg(trap_impl = "wasm")]
     {
         core::arch::wasm::unreachable()
+    }
+    #[cfg(trap_impl = "core-intrinsics")]
+    {
+        core::intrinsics::abort()
     }
     #[cfg(trap_impl = "assembly")]
     unsafe {

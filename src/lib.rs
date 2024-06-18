@@ -56,12 +56,12 @@
 #[cold]
 #[inline(always)] // immediately delegates
 pub fn abort() -> ! {
-    #[cfg(any(feature = "std", feature = "libc"))]
+    #[cfg(not(abort_impl = "fallback"))]
     {
         immediate_abort()
     }
     // fallback
-    #[cfg(not(any(feature = "std", feature = "libc")))]
+    #[cfg(abort_impl = "fallback")]
     {
         fallback_abort()
     }
@@ -76,16 +76,16 @@ pub fn abort() -> ! {
 ///
 /// In most cases (especially safe code),
 /// using the regular [`abort`] function is fine.
-#[cfg(any(feature = "std", feature = "libc"))]
-#[inline(always)] // immediately delgeates
+#[cfg(not(abort_impl = "fallback"))]
+#[inline(always)] // immediately delegates
 pub fn immediate_abort() -> ! {
     // implicitly requires std
-    #[cfg(feature = "std")]
+    #[cfg(abort_impl = "std")]
     {
         std::process::abort();
     }
     // use standard C library abort function
-    #[cfg(all(feature = "libc", not(feature = "std")))]
+    #[cfg(abort_impl = "libc")]
     unsafe {
         libc::abort();
     }
@@ -105,7 +105,7 @@ pub fn immediate_abort() -> ! {
 /// because calling a single-argument function
 /// requires an additional load & register move
 /// than calling a zero-argument function.
-#[cfg(not(any(feature = "std", feature = "libc")))]
+#[cfg(abort_impl = "fallback")]
 #[inline(never)]
 #[cold]
 fn fallback_abort() -> ! {
@@ -122,17 +122,23 @@ fn fallback_abort() -> ! {
      * If it aborts, we only need to panic once.
      * If it unwinds, we need to do a double-panic.
      *
-     * NOTE: cfg!(panic = "abort") was stabalized in rust 1.60.0.
-     * While unknown cfg!(...) attributes would normally evalute to false,
+     * NOTE: cfg!(panic = "abort") was stabilized in rust 1.60.0.
+     * While unknown cfg!(...) attributes would normally evaluate to false,
      * for a couple of versions even mentioning this attribute required
      * a nightly compiler.
-     * In order to avoid errors on old stable compilers,
+     * To avoid errors on old stable compilers,
      * we gate on the compiler version with #[rustversion::since(...))]
      */
-    #[rustversion::since(1.60.0)]
-    const PANIC_DOES_ABORT: bool = cfg!(panic = "abort");
-    #[rustversion::before(1.60.0)]
-    const PANIC_DOES_ABORT: bool = false;
+    const PANIC_DOES_ABORT: bool = {
+        #[cfg(has_cfg_panic)]
+        {
+            cfg!(panic = "abort")
+        }
+        #[cfg(not(has_cfg_panic))]
+        {
+            false
+        }
+    };
     if PANIC_DOES_ABORT {
         do_panic()
     } else {

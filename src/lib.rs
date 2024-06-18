@@ -71,8 +71,7 @@ pub fn abort() -> ! {
 /// Immediately call the platform-specific [`abort`] implementation,
 /// without invoking any other code.
 ///
-/// Unlike ,
-/// this will never use a fallback implementation that calls `panic!`.
+/// Unlike [`abort`], this will never use a fallback implementation that calls `panic!`.
 /// Instead, this function will simply not exist.
 ///
 /// In most cases (especially safe code),
@@ -160,7 +159,7 @@ fn fallback_abort() -> ! {
 
 /// A RAII guard that [aborts](`abort`) the process unless it is explicitly [defused](`AbortGuard::defuse`).
 ///
-/// This is very useful for guarenteeing a section of code will never panic,
+/// This is very useful for guaranteeing a section of code will never panic,
 /// trivially ensuring the [exception
 /// safety](https://doc.rust-lang.org/nomicon/exception-safety.html) of unsafe code.
 #[derive(Debug, Clone)]

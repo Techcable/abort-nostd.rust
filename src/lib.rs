@@ -80,7 +80,10 @@ pub fn abort() -> ! {
 /// using the regular [`abort`] function is fine.
 #[cfg(not(abort_impl = "fallback"))]
 // NOTE: Keep doc(cfg(...)) in sync with the underlying reasons for the abort_impl
-#[cfg_attr(has_doc_cfg, doc(cfg(any(feature = "std", feature = "libc"))))]
+#[cfg_attr(
+    has_doc_cfg,
+    doc(cfg(any(feature = "std", feature = "libc", feature = "abort-via-trap")))
+)]
 #[inline(always)] // immediately delegates
 pub fn immediate_abort() -> ! {
     // implicitly requires std
@@ -92,6 +95,11 @@ pub fn immediate_abort() -> ! {
     #[cfg(abort_impl = "libc")]
     unsafe {
         libc::abort();
+    }
+    // abort by doing a trap instruction
+    #[cfg(abort_impl = "trap")]
+    {
+        invoke_trap()
     }
 }
 

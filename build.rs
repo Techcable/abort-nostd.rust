@@ -44,10 +44,12 @@ pub fn main() {
         "std"
     } else if has_cargo_feature("libc") {
         "libc"
+    } else if has_cargo_feature("abort-via-trap") && trap_impl_name != "fallback" {
+        "trap"
     } else {
         "fallback"
     };
-    emit_check_cfg("abort_impl", Some(vec!["std", "libc", "fallback"]));
+    emit_check_cfg("abort_impl", Some(vec!["std", "libc", "trap", "fallback"]));
     println!("cargo:rustc-cfg=abort_impl=\"{}\"", abort_impl_name);
     // never need to be re-run
     println!("cargo:rerun-if-changed=build.rs");

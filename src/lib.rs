@@ -1,6 +1,8 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(not(any(doc, feature = "std")), no_std)]
 #![cfg_attr(has_doc_cfg, feature(doc_cfg))] // doc_cfg only supported on nightly
+#![cfg_attr(trap_impl = "core-intrinsics", allow(internal_features))] // very stable in practice...
+#![cfg_attr(trap_impl = "core-intrinsics", feature(core_intrinsics))]
 #![deny(dead_code)] // Don't allow missing implementations
 
 /// Abort the process, as if calling [`std::process::abort`]
@@ -154,6 +156,65 @@ fn fallback_abort() -> ! {
         }
         let _guard = DoublePanicGuard;
         do_panic()
+    }
+}
+
+/// Abnormally terminate the program by generating a trap instruction.
+///
+/// This is semantically equivalent to the [LLVM `llvm.trap` intrinsic][llvm-trap].
+///
+/// One advantage over calling the [`abort`] function is that
+/// the caller code-size is often smaller.
+///
+/// [llvm-trap]: https://releases.llvm.org/18.1.0/docs/LangRef.html#llvm-trap-intrinsic
+#[inline(always)]
+#[cold]
+pub fn trap() -> ! {
+    #[cfg(not(trap_impl = "fallback"))]
+    {
+        invoke_trap()
+    }
+    #[cfg(trap_impl = "fallback")]
+    {
+        abort()
+    }
+}
+
+/// Actually invoke the underlying trap instruction.
+///
+/// When using the "fallback" trap implementation,
+/// this function is missing.
+#[inline(always)]
+#[cfg(not(trap_impl = "fallback"))]
+#[cold]
+fn invoke_trap() -> ! {
+    #[cfg(trap_impl = "core-intrinsics")]
+    {
+        core::intrinsics::abort()
+    }
+    #[cfg(trap_impl = "wasm")]
+    {
+        core::arch::wasm::unreachable()
+    }
+    #[cfg(trap_impl = "assembly")]
+    unsafe {
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        {
+            core::arch::asm!("ud2", options(noreturn, nomem, nostack));
+        }
+        #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
+        {
+            // On aarch64:
+            // GCC __builtin_trap() does `brk #1000`
+            // LLVM __builtin_trap() does `brk #0x1`
+            // On ARM32:
+            // LLVM does `.inst 0xe7ffdefe`
+            //
+            // However in all cases, `udf` works just as well.
+            // It is a shorthand for an undefined instruction
+            // Also `brk` is sometimes used to trigger debuggers
+            core::arch::asm!("udf #0xDEAD", options(noreturn, nomem, nostack));
+        }
     }
 }
 

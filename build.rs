@@ -41,7 +41,7 @@ pub fn main() {
         // The `core::intrinsics` module requires nightly.
         // It is an "internal" feature that will never be directly stabilized.
         "core-intrinsics"
-    } else if supported_arch {
+    } else if supported_arch && RUST_VERSION.is_since_minor_version(1, 59) {
         "assembly"
     } else {
         "fallback"

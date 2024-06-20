@@ -3,6 +3,7 @@
 #![cfg_attr(has_doc_cfg, feature(doc_cfg))] // doc_cfg only supported on nightly
 #![cfg_attr(trap_impl = "core-intrinsics", allow(internal_features))] // very stable in practice...
 #![cfg_attr(trap_impl = "core-intrinsics", feature(core_intrinsics))]
+#![cfg_attr(trap_impl = "wasm64-intrinsic", feature(simd_wasm64))] // currently unstable
 #![deny(dead_code)] // Don't allow missing implementations
 
 /// Abort the process, as if calling [`std::process::abort`]
@@ -196,9 +197,18 @@ pub fn trap() -> ! {
 #[cfg(not(trap_impl = "fallback"))]
 #[cold]
 fn invoke_trap() -> ! {
-    #[cfg(trap_impl = "wasm")]
+    #[cfg(trap_impl = "wasm32-intrinsic")]
     {
-        core::arch::wasm::unreachable()
+        // The `wasm32` module is stabilized under feature "simd_wasm32", accepted in 1.33
+        core::arch::wasm32::unreachable()
+    }
+
+    #[cfg(trap_impl = "wasm64-intrinsic")]
+    {
+        // The `wasm64` module is currently unstable
+        //
+        // TODO: Test this architecture (issue #3)
+        core::arch::wasm64::unreachable()
     }
     #[cfg(trap_impl = "core-intrinsics")]
     {

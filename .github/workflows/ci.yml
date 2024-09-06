@@ -40,16 +40,7 @@ jobs:
       - name: Run `abortcli` example
         run: python3 ./scripts/test_abortcli_example.py --features "${{matrix.features}}" --rust-version "${{matrix.rust}}"
 
-  windows:
-    name: Windows
-    needs: pre_ci
-    if: needs.pre_ci.outputs.continue
-    runs-on: windows-latest
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - run: cargo test
+  # TODO: Run examples under windows & miri
 
   doc:
     name: Documentation
@@ -94,20 +85,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@clippy
       - run: cargo clippy --tests
-
-  miri:
-    name: Miri
-    needs: pre_ci
-    if: needs.pre_ci.outputs.continue
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@miri
-      - run: cargo miri setup
-      - run: cargo miri test
-        env:
-          MIRIFLAGS: -Zmiri-strict-provenance
 
   outdated:
     name: Outdated

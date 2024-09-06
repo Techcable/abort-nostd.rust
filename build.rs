@@ -10,6 +10,14 @@ pub fn main() {
     if RUST_VERSION.is_nightly() {
         println!("cargo:rustc-cfg=has_doc_cfg");
     }
+    emit_check_cfg("is_cabi_unwind_guarenteed_abort", None);
+    if RUST_VERSION.is_since_minor_version(1, 81) {
+        // As of Rust 1.81, unwinding past an `extern "C"` function
+        // is guarenteed to unwind
+        //
+        // Before this release, it caused undefined behavior.
+        println!("cargo:rustc-cfg=is_cabi_unwind_guarenteed_abort");
+    }
     let target_arch = {
         let mut values = load_cargo_cfg_var("target_arch");
         assert_eq!(

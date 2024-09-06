@@ -132,7 +132,7 @@ pub fn immediate_abort() -> ! {
     }
 }
 
-/// The fallback implementation
+/// The fallback implementation.
 ///
 /// ## Rationale for never inlining
 /// The most important reason this function should never be inlined
@@ -158,6 +158,18 @@ fn fallback_abort() -> ! {
     fn do_panic() -> ! {
         panic!("fatal error - aborting");
     }
+    /// Unwinds past an `extern "C"` boundary.
+    ///
+    /// ## Safety
+    /// Must be a rust version where unwinding past
+    /// ABI boundaries is guarenteed to abort.
+    ///
+    /// If this guarentee doesn't hold,
+    /// this is undefined behavior.
+    #[inline(never)]
+    unsafe extern "C" fn cabi_unwind() -> ! {
+        do_panic();
+    }
     /*
      * Check if a panics cause unwinding or immediate aborts.
      * If it aborts, we only need to panic once.
@@ -182,6 +194,10 @@ fn fallback_abort() -> ! {
     };
     if PANIC_DOES_ABORT {
         do_panic()
+    } else if cfg!(is_cabi_unwind_guarenteed_abort) {
+        // SAFETY: On rust versions >= 1.81,
+        // unwinding past C ABI boundaries is guarenteed to abort
+        unsafe { cabi_unwind() }
     } else {
         // double panics are guarenteed to abort
         struct DoublePanicGuard;

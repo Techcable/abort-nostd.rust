@@ -16,22 +16,29 @@ jobs:
   pre_ci:
     uses: dtolnay/.github/.github/workflows/pre_ci.yml@master
 
-  test:
-    name: Rust ${{matrix.rust}}
+  # The cargo integration & unit tests don't do anything
+  # for this crate.
+  # Instead, we use the examples binaries to run our tests
+  tests:
+    name: "Rust ${{matrix.rust}} (features: ${{ matrix.features }})"
     needs: pre_ci
     if: needs.pre_ci.outputs.continue
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        rust: [nightly, beta, stable, 1.81.0, 1.56.0, 1.31.0]
+        rust: [nightly, beta, stable, 1.59.0, 1.31.0]
+        features: ["", "libc", "std", "abort-via-trap"]
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{matrix.rust}}
-      - run: cargo test
+      - run: cargo build --features "${{ matrix.features }}" --release --example abortcli
+      # This should always abort
+      - name: Run `abortcli` example
+        run: python3 ./scripts/test_abortcli_example.py --features "${{matrix.features}}" --rust-version "${{matrix.rust}}"
 
   windows:
     name: Windows

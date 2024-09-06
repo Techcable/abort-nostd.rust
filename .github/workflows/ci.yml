@@ -35,6 +35,17 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{matrix.rust}}
+      # Cache crates.io index for old versions which use git index
+      - name: Cache cargo index
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+          key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.rust }}
       - run: cargo build --features "${{ matrix.features }}" --release --example abortcli
       # This should always abort
       - name: Run `abortcli` example

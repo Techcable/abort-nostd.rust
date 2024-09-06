@@ -28,7 +28,10 @@
 #![cfg_attr(trap_impl = "core-intrinsics", allow(internal_features))] // very stable in practice...
 #![cfg_attr(trap_impl = "core-intrinsics", feature(core_intrinsics))]
 #![cfg_attr(trap_impl = "wasm64-intrinsic", feature(simd_wasm64))] // currently unstable
-#![deny(dead_code)] // Don't allow missing implementations
+#![deny(
+    dead_code, // Don't allow missing implementations
+    clippy::undocumented_unsafe_blocks,
+)]
 
 /// Abort the process, as if calling [`std::process::abort`]
 /// or the C standard library [`abort`](https://en.cppreference.com/w/c/program/abort) function.
@@ -117,6 +120,7 @@ pub fn immediate_abort() -> ! {
         std::process::abort();
     }
     // use standard C library abort function
+    // SAFETY: libc::abort() is safe to invoke
     #[cfg(abort_impl = "libc")]
     unsafe {
         libc::abort();

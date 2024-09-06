@@ -83,7 +83,7 @@ fn load_cargo_cfg_var(name: &'static str) -> Vec<String> {
 
 fn has_cargo_feature(name: &str) -> bool {
     let name = name.replace('-', "_").to_uppercase();
-    std::env::var_os(format!("CARGO_FEATURE_{name}")).is_some()
+    std::env::var_os(format!("CARGO_FEATURE_{}", name)).is_some()
 }
 
 fn emit_check_cfg(name: &'static str, values: Option<Vec<&str>>) {
@@ -100,9 +100,9 @@ fn emit_check_cfg(name: &'static str, values: Option<Vec<&str>>) {
         }
         values_spec.push(')');
     }
-    println!("cargo:rustc-check-cfg=cfg({name}{values_spec})");
+    println!("cargo:rustc-check-cfg=cfg({}{})", name, values_spec);
 }
 
 fn emit_warning(msg: &dyn std::fmt::Display) {
-    println!("cargo:warning={msg}");
+    println!("cargo:warning={}", msg);
 }

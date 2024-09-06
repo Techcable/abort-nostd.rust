@@ -1,12 +1,12 @@
 # libabort [![Latest Version]][crates.io]
+
+<!-- cargo-rdme start -->
+
 An implementation of the `abort` function that works without the standard library.
 
-Provides an `AbortGuard` type to abort the process unless explicitly "defused".
+Provides an [`AbortGuard`] type to abort the process unless explicitly "defused".
 This can prevent panics from unwinding in the middle of `unsafe` code,
-which trivially makes the code [exception safe](nomicon-exception-safety).
-
-[Latest Version]: https://img.shields.io/crates/v/libabort.svg
-[crates.io]: https://crates.io/crates/libabort
+which trivially makes the code [exception safe][nomicon-exception-safety].
 
 ## Available implementations
 The library offers multiple possible implementations,
@@ -24,11 +24,23 @@ which can be controlled by using feature flags.
    then the `abort` function triggers a double-panic.
    This always triggers an abort regardless of the rust version or compiler settings.
 
-
-[`std::process::abort`]: https://doc.rust-lang.org/std/process/fn.abort.html
 [libc-abort]: https://en.cppreference.com/w/c/program/abort
 [libc-crate]: https://crates.io/crates/libc
 [nomicon-exception-safety]: https://doc.rust-lang.org/nomicon/exception-safety.html
+
+<!-- cargo-rdme end -->
+
+<!--
+   Need explicit links to type because `cargo rdme` has broken detection.
+   TODO: File an issue for this.
+-->
+[`AbortGuard`]: https://docs.rs/libabort/latest/libabort/struct.AbortGuard.html
+[`std::process::abort`]: https://doc.rust-lang.org/stable/std/process/fn.abort.html
+
+
+[Latest Version]: https://img.shields.io/crates/v/libabort.svg
+[crates.io]: https://crates.io/crates/libabort
+
 
 ## License
 Licensed under either of Apache License, Version 2.0 or MIT license at your option.
